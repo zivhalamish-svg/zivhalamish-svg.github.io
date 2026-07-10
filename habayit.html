@@ -1,0 +1,1236 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="הבית שלנו">
+<meta name="theme-color" content="#3B5BDB">
+<title>🏠 הבית שלנו</title>
+
+<!-- PWA Icon (embedded SVG as apple touch icon) -->
+<link rel="apple-touch-icon" href="icon.png">
+<link rel="icon" type="image/png" href="icon.png">
+
+<!-- OneSignal -->
+<script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer></script>
+<script>
+  window.OneSignalDeferred = window.OneSignalDeferred || [];
+  OneSignalDeferred.push(async function(OneSignal) {
+    await OneSignal.init({
+      appId: "3850a527-9e5e-4f70-bde3-6ca0ac5ae415",
+      notifyButton: { enable: false },
+      allowLocalhostAsSecureOrigin: true,
+      serviceWorkerPath: "OneSignalSDKWorker.js",
+      serviceWorkerParam: { scope: "./" },
+    });
+  });
+</script>
+
+<style>
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html{font-size:16px}
+body{height:100dvh;overflow:hidden;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif;direction:rtl;color:#1a1a1a;background:#f2f2f7}
+
+/* SPLASH */
+#splash{position:fixed;inset:0;background:#fff;z-index:9999;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;transition:opacity .4s ease}
+#splash.hide{opacity:0;pointer-events:none}
+.splash-house{font-size:72px}
+.splash-title{font-size:24px;font-weight:600;color:#1a1a1a;letter-spacing:-.3px}
+.splash-sub{font-size:15px;color:#8e8e93}
+
+/* APP */
+.app{max-width:540px;margin:0 auto;height:100dvh;display:flex;flex-direction:column;background:#f2f2f7}
+
+/* HEADER */
+.hdr{padding:14px 18px 12px;background:#fff;border-bottom:0.5px solid #e5e5ea;display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
+.hdr h1{font-size:18px;font-weight:600;color:#1a1a1a;letter-spacing:-.3px}
+.hdr-sub{font-size:12px;color:#8e8e93;margin-top:2px;display:flex;align-items:center;gap:5px}
+.cdot{width:7px;height:7px;border-radius:50%;background:#c7c7cc;flex-shrink:0;transition:background .3s}
+.cdot.on{background:#34c759}
+.bell-btn{background:none;border:none;cursor:pointer;width:40px;height:40px;display:flex;align-items:center;justify-content:center;font-size:20px;border-radius:50%;position:relative;color:#8e8e93}
+.bell-btn:active{background:#f2f2f7}
+.nbadge{position:absolute;top:3px;right:3px;background:#ff3b30;color:#fff;font-size:10px;font-weight:700;min-width:16px;height:16px;border-radius:99px;display:none;align-items:center;justify-content:center;padding:0 4px}
+
+/* SYNC PILL */
+.sync-wrap{position:absolute;top:68px;left:0;right:0;z-index:100;display:flex;justify-content:center;padding:0 20px;pointer-events:none}
+.sync-pill{background:#1a1a1a;color:#fff;font-size:13px;padding:8px 18px;border-radius:99px;opacity:0;transition:opacity .3s;max-width:90%;text-align:center}
+.sync-pill.show{opacity:1}
+
+/* NOTIF PANEL */
+.npanel{background:#fff;border-bottom:0.5px solid #e5e5ea;max-height:0;overflow:hidden;transition:max-height .25s ease;flex-shrink:0}
+.npanel.open{max-height:220px;overflow-y:auto}
+.nhead{padding:10px 18px 7px;display:flex;justify-content:space-between;align-items:center;border-bottom:0.5px solid #f2f2f7}
+.nhead span{font-size:13px;font-weight:600;color:#3c3c43}
+.nhead button{background:none;border:none;cursor:pointer;font-size:13px;color:#007aff;font-family:inherit}
+.nrow{padding:11px 18px;display:flex;gap:10px;align-items:flex-start;border-bottom:0.5px solid #f2f2f7}
+.nrow.isnew{background:#f0f8ff}
+.ndot{width:7px;height:7px;border-radius:50%;margin-top:5px;flex-shrink:0}
+.ndot.new{background:#007aff}.ndot.old{background:#c7c7cc}
+.ntext{font-size:14px;color:#1a1a1a;flex:1;line-height:1.4}
+.ntime{font-size:11px;color:#8e8e93;margin-top:2px}
+
+/* NEXT EVENT BAR */
+#next-event-bar{padding:9px 18px;background:#f9f9fb;border-bottom:0.5px solid #e5e5ea;cursor:pointer}
+
+/* CONTENT */
+.content{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:16px 14px 8px}
+.section{display:none}.section.active{display:block}
+
+/* ADD BAR */
+.add-bar{display:flex;gap:8px;margin-bottom:14px}
+.add-bar input{flex:1;padding:11px 14px;border:0.5px solid #e5e5ea;border-radius:12px;font-size:16px;background:#fff;color:#1a1a1a;direction:rtl;outline:none;font-family:inherit}
+.add-bar input:focus{border-color:#007aff;box-shadow:0 0 0 3px rgba(0,122,255,.1)}
+.addbtn{width:46px;height:46px;background:#007aff;color:#fff;border:none;border-radius:12px;cursor:pointer;font-size:24px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.addbtn:active{background:#0062cc;transform:scale(.96)}
+
+/* LABELS */
+.slabel{font-size:11px;font-weight:600;color:#8e8e93;margin-bottom:7px;letter-spacing:.5px;text-transform:uppercase}
+
+/* ITEM CARDS */
+.icard{display:flex;align-items:center;gap:10px;padding:13px 14px;background:#fff;border-radius:12px;margin-bottom:7px;border:0.5px solid #e5e5ea}
+.icard.done{background:#fafafa}
+.icard.done .itext{text-decoration:line-through;color:#8e8e93}
+.cb{width:22px;height:22px;border-radius:50%;border:1.5px solid #c7c7cc;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all .15s;font-size:12px}
+.cb.chk{background:#34c759;border-color:#34c759;color:#fff}
+.itext{flex:1;font-size:15px;color:#1a1a1a}
+.bytag{font-size:11px;color:#c7c7cc;flex-shrink:0;background:#f2f2f7;padding:2px 7px;border-radius:99px}
+.idel{background:none;border:none;cursor:pointer;color:#c7c7cc;width:32px;height:32px;display:flex;align-items:center;justify-content:center;font-size:16px;border-radius:8px}
+.idel:active{color:#ff3b30;background:#fff5f5}
+
+/* EVENTS */
+.ecard{padding:12px 14px;background:#fff;border-radius:12px;margin-bottom:7px;border:0.5px solid #e5e5ea;display:flex;gap:12px;align-items:center}
+.ecard.past{opacity:.4}
+.edate{text-align:center;min-width:40px;flex-shrink:0;background:#f2f2f7;border-radius:10px;padding:8px 4px}
+.edate .day{font-size:20px;font-weight:700;color:#007aff;line-height:1}
+.edate .mon{font-size:10px;color:#8e8e93;margin-top:2px}
+.einfo{flex:1;min-width:0}
+.ename{font-size:15px;font-weight:500;color:#1a1a1a}
+.esub{font-size:12px;color:#8e8e93;margin-top:4px;display:flex;gap:6px;align-items:center;flex-wrap:wrap}
+.bdg{font-size:11px;padding:2px 8px;border-radius:99px;font-weight:500}
+.bk{background:#e8f5e0;color:#2a6011}
+.bc{background:#eef0ff;color:#3a3589}
+.bg{background:#e5f1ff;color:#0a3a8b}
+.today-dot{width:6px;height:6px;border-radius:50%;background:#ff3b30;display:inline-block;margin-left:4px;vertical-align:middle}
+.sep-label{font-size:11px;color:#c7c7cc;text-align:center;padding:8px 0 4px;border-top:0.5px solid #e5e5ea;margin-top:4px}
+
+/* EVENT FORM */
+.evform{background:#fff;border:0.5px solid #e5e5ea;border-radius:16px;padding:16px;margin-bottom:14px;display:none;flex-direction:column;gap:11px}
+.evform.open{display:flex}
+.evform input[type=text]{width:100%;padding:11px 14px;border:0.5px solid #e5e5ea;border-radius:10px;font-size:16px;background:#f9f9fb;color:#1a1a1a;direction:rtl;outline:none;font-family:inherit}
+.evform input[type=text]:focus{border-color:#007aff;background:#fff}
+.evform input[type=date],.evform input[type=time]{flex:1;padding:10px 10px;border:0.5px solid #e5e5ea;border-radius:10px;font-size:14px;background:#f9f9fb;color:#1a1a1a;font-family:inherit;outline:none}
+.form-row{display:flex;gap:8px}
+.catbtn{flex:1;padding:9px 4px;border:0.5px solid #e5e5ea;border-radius:10px;font-size:13px;cursor:pointer;background:#f9f9fb;color:#3c3c43;font-family:inherit;font-weight:500}
+.catbtn.sel{background:#007aff;color:#fff;border-color:#007aff}
+.form-actions{display:flex;gap:8px}
+.btn-cancel{flex:1;padding:12px;border:0.5px solid #e5e5ea;border-radius:10px;font-size:14px;cursor:pointer;background:#fff;color:#8e8e93;font-family:inherit}
+.btn-add{flex:2;padding:12px;background:#007aff;color:#fff;border:none;border-radius:10px;font-size:14px;cursor:pointer;font-family:inherit;font-weight:600}
+
+/* TASKS */
+.tcard{padding:13px 14px;background:#fff;border-radius:12px;margin-bottom:7px;border:0.5px solid #e5e5ea;display:flex;align-items:center;gap:10px}
+.tcard.done .tname{text-decoration:line-through;color:#8e8e93}
+.tname{flex:1;font-size:15px;color:#1a1a1a}
+.wtag{font-size:12px;padding:4px 10px;border-radius:99px;background:#f2f2f7;border:0.5px solid #e5e5ea;color:#007aff;cursor:pointer;flex-shrink:0;font-weight:500}
+
+/* REMINDERS */
+.rcard{padding:13px 14px;background:#fff;border-radius:12px;margin-bottom:7px;border:0.5px solid #e5e5ea;display:flex;gap:11px;align-items:center}
+
+/* MESSAGES */
+#sec-msg{display:none;flex-direction:column}
+#sec-msg.active{display:flex;height:100%}
+.msg-feed{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;display:flex;flex-direction:column;gap:10px;padding-bottom:8px;min-height:0}
+.day-sep{text-align:center;font-size:11px;color:#8e8e93;padding:4px 0}
+.bwrp{display:flex;flex-direction:column;max-width:78%}
+.bwrp.mine{align-self:flex-end;align-items:flex-end}
+.bwrp.theirs{align-self:flex-start;align-items:flex-start}
+.bubble{padding:10px 14px;border-radius:18px;font-size:15px;line-height:1.5;white-space:pre-wrap;word-break:break-word}
+.bubble.mine{background:#007aff;color:#fff;border-bottom-left-radius:4px}
+.bubble.theirs{background:#fff;border:0.5px solid #e5e5ea;color:#1a1a1a;border-bottom-right-radius:4px}
+.bmeta{font-size:11px;color:#8e8e93;margin-top:3px;padding:0 2px}
+.msginput{border-top:0.5px solid #e5e5ea;padding:10px 14px 18px;display:flex;gap:8px;align-items:flex-end;background:#fff;flex-shrink:0}
+.msgtxt{flex:1;padding:10px 14px;border:0.5px solid #e5e5ea;border-radius:20px;font-size:15px;font-family:inherit;background:#f9f9fb;color:#1a1a1a;direction:rtl;resize:none;min-height:40px;max-height:100px;overflow-y:auto;line-height:1.4;outline:none}
+.msgtxt:focus{border-color:#007aff;background:#fff}
+.msgsend{width:40px;height:40px;background:#007aff;border:none;border-radius:50%;cursor:pointer;color:#fff;font-size:18px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.msgsend:disabled{background:#e5e5ea;color:#8e8e93}
+
+/* NAV */
+.nav{display:flex;border-top:0.5px solid #e5e5ea;background:#fff;padding-bottom:env(safe-area-inset-bottom,6px);flex-shrink:0}
+.navbtn{flex:1;padding:9px 2px 7px;border:none;background:none;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:2px;font-size:10px;font-weight:500;color:#8e8e93;font-family:inherit;min-height:52px}
+.navbtn.active{color:#007aff}
+.navbtn svg{width:24px;height:24px;stroke:currentColor;stroke-width:1.8;fill:none;stroke-linecap:round;stroke-linejoin:round}
+
+/* NOTIFY BTN */
+.notify-btn{width:100%;margin-bottom:10px;padding:10px;background:#f2f2f7;border:0.5px solid #e5e5ea;border-radius:12px;font-size:14px;font-weight:500;color:#007aff;cursor:pointer;font-family:inherit;display:flex;align-items:center;justify-content:center;gap:6px}
+.notify-btn:active{background:#e5e5ea}
+
+/* MISC */
+.empty{text-align:center;padding:36px 20px;color:#8e8e93;font-size:15px}
+.loader-wrap{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:80px 20px;gap:14px;color:#8e8e93;font-size:15px}
+.spinner{width:28px;height:28px;border:2.5px solid #e5e5ea;border-top-color:#007aff;border-radius:50%;animation:spin .8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* IDENTITY */
+#id-screen{display:flex;flex-direction:column;align-items:center;justify-content:center;height:100dvh;padding:40px 28px;gap:26px;background:#fff}
+.id-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;width:100%}
+.id-btn{padding:24px 16px;border:0.5px solid #e5e5ea;border-radius:18px;background:#f9f9fb;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:10px;font-family:inherit;transition:all .15s}
+.id-btn:active{background:#f0f8ff;border-color:#007aff;transform:scale(.97)}
+.id-btn-name{font-size:18px;font-weight:600;color:#1a1a1a}
+</style>
+</head>
+<body>
+
+<!-- Splash Screen -->
+<div id="splash">
+  <div class="splash-house">🏠</div>
+  <div class="splash-title">הבית שלנו</div>
+  <div class="splash-sub">זיו ושני</div>
+</div>
+
+<!-- Identity screen -->
+<div id="id-screen" style="display:none">
+  <div style="text-align:center">
+    <div style="font-size:62px;margin-bottom:8px">🏠</div>
+    <div style="font-size:28px;font-weight:700;color:#1a1a1a">הבית שלנו</div>
+    <div style="font-size:16px;color:#8e8e93;margin-top:8px">מי את/ה?</div>
+  </div>
+  <div class="id-grid">
+    <button class="id-btn" onclick="setMe('זיו')">
+      <div style="font-size:56px">🧑</div>
+      <div class="id-btn-name" style="color:#1a1a1a">זיו</div>
+    </button>
+    <button class="id-btn" onclick="setMe('שני')">
+      <div style="font-size:56px">👱‍♀️</div>
+      <div class="id-btn-name" style="color:#1a1a1a">שני</div>
+    </button>
+  </div>
+</div>
+
+<!-- Main app -->
+<div id="main-app" style="display:none;height:100dvh">
+<div class="app" style="position:relative">
+  <div class="hdr">
+    <div>
+      <h1>🏠 הבית שלנו</h1>
+      <div class="hdr-sub"><span class="cdot" id="cdot"></span><span id="ctext">מתחבר...</span></div>
+    </div>
+    <button class="bell-btn" onclick="toggleN()" aria-label="התראות">
+      🔔<div class="nbadge" id="nbadge"></div>
+    </button>
+  </div>
+
+  <div class="sync-wrap"><div class="sync-pill" id="syncpill"></div></div>
+
+  <div id="notif-setup" style="display:none;padding:10px 16px;background:#fff8e1;border-bottom:0.5px solid #ffe082">
+    <div style="font-size:13px;font-weight:600;color:#e65100;margin-bottom:6px">🔔 התראות לא פעילות</div>
+    <button onclick="subscribeToNotifs()" style="width:100%;padding:10px;background:#ff6f00;color:#fff;border:none;border-radius:10px;font-size:14px;font-weight:600;cursor:pointer;font-family:inherit">הפעל התראות</button>
+  </div>
+  <!-- What's coming banner -->
+  <div id="next-event-bar" style="display:none;padding:10px 18px;background:#EBF0FF;border-bottom:1.5px solid #DCE6F5;cursor:pointer" onclick="showTab('ev',document.querySelector('.navbtn:nth-child(2)'))">
+    <div style="font-size:11px;font-weight:700;color:#3B5BDB;letter-spacing:.4px">הבא בתור</div>
+    <div id="next-event-text" style="font-size:14px;font-weight:600;color:#0F1B3D;margin-top:1px"></div>
+  </div>
+
+  <div class="npanel" id="npanel">
+    <div class="nhead"><span>עדכונים</span><button onclick="markRead()">סמן כנקרא</button></div>
+    <div id="nlist"></div>
+  </div>
+
+  <div class="content">
+    <div class="loader-wrap" id="loader"><div class="spinner"></div>מתחבר...</div>
+    <div id="sections" style="display:none">
+
+      <div class="section active" id="sec-shop">
+        <!-- List selector -->
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px">
+          <div id="list-pills" style="display:flex;gap:7px;overflow-x:auto;flex:1;scrollbar-width:none;padding-bottom:2px"></div>
+          <button onclick="addNewList()" style="flex-shrink:0;padding:7px 12px;background:#007aff;color:#fff;border:none;border-radius:12px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit">+ רשימה</button>
+        </div>
+        <!-- List actions -->
+        <div id="list-actions" style="display:flex;gap:8px;margin-bottom:12px"></div>
+        <!-- Notify button -->
+        <button onclick="notifySection('shop')" class="notify-btn">
+          🔔 שלח התראה לשני על רשימת הקניות
+        </button>
+        <!-- Add item -->
+        <div style="position:relative;margin-bottom:11px">
+          <div class="add-bar" style="margin-bottom:0">
+            <input id="si" placeholder='הוסף פריט... (למשל "חלב x2" או "לחם (מהמאפייה)")' oninput="showSuggestions(this.value)" onkeydown="if(event.key==='Enter')addShop()" autocomplete="off" />
+            <button class="addbtn" onclick="addShop()">+</button>
+          </div>
+          <div id="suggestions" style="display:none;position:absolute;top:52px;right:0;left:0;background:#fff;border:1.5px solid #DCE6F5;border-radius:14px;z-index:50;box-shadow:0 8px 24px rgba(0,0,0,.12);overflow:hidden"></div>
+        </div>
+        <!-- Category filter -->
+        <div id="cat-filter" style="display:flex;gap:7px;overflow-x:auto;padding-bottom:10px;margin-bottom:10px;scrollbar-width:none"></div>
+        <!-- Items -->
+        <div id="spend"></div>
+        <!-- Bottom actions -->
+        <div id="shop-bottom" style="display:flex;gap:8px;margin-top:12px"></div>
+      </div>
+
+      <div class="section" id="sec-ev">
+        <!-- Header: toggle + add button -->
+        <div style="display:flex;gap:8px;margin-bottom:14px">
+          <div style="display:flex;background:#F0F4FF;border-radius:12px;padding:3px;gap:3px;flex:1">
+            <button id="view-cal" onclick="setEvView('cal')" style="flex:1;padding:8px;border:none;border-radius:10px;background:#3B5BDB;color:#fff;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit">📅 חודש</button>
+            <button id="view-week" onclick="setEvView('week')" style="flex:1;padding:8px;border:none;border-radius:10px;background:transparent;color:#4A5D8A;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit">📆 שבוע</button>
+            <button id="view-list" onclick="setEvView('list')" style="flex:1;padding:8px;border:none;border-radius:10px;background:transparent;color:#4A5D8A;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit">📋 רשימה</button>
+          </div>
+          <button class="addbtn" onclick="toggleEvForm()" style="width:50px;height:42px;border-radius:14px;font-size:24px">+</button>
+        </div>
+        <!-- Notify button -->
+        <button onclick="notifySection('ev')" class="notify-btn">
+          🔔 שלח התראה לשני על לוח האירועים
+        </button>
+        <!-- Event form -->
+        <div class="evform" id="evform">
+          <input type="text" id="evi" placeholder="שם האירוע (חובה)" />
+          <div class="form-row"><input type="date" id="evdate" /><input type="time" id="evtime" /></div>
+          <div style="font-size:11px;font-weight:700;color:#8FA8C8;margin-bottom:4px">קטגוריה</div>
+          <div class="form-row">
+            <button class="catbtn sel" id="cat-kids" onclick="selCat('kids')">👶 ילדים</button>
+            <button class="catbtn" id="cat-couple" onclick="selCat('couple')">💑 זוג</button>
+            <button class="catbtn" id="cat-general" onclick="selCat('general')">📌 כללי</button>
+          </div>
+          <div style="font-size:11px;font-weight:700;color:#8FA8C8;margin-bottom:4px">מי אחראי?</div>
+          <div class="form-row">
+            <button class="catbtn sel" id="evwho-both" onclick="selEvWho('both')">👫 שניהם</button>
+            <button class="catbtn" id="evwho-ziv" onclick="selEvWho('ziv')">👨 זיו</button>
+            <button class="catbtn" id="evwho-shani" onclick="selEvWho('shani')">👩 שני</button>
+          </div>
+          <div style="font-size:11px;font-weight:700;color:#8FA8C8;margin-bottom:4px">חזרה</div>
+          <div class="form-row">
+            <button class="catbtn sel" id="rec-none" onclick="selRec('none')">חד פעמי</button>
+            <button class="catbtn" id="rec-weekly" onclick="selRec('weekly')">שבועי</button>
+            <button class="catbtn" id="rec-monthly" onclick="selRec('monthly')">חודשי</button>
+          </div>
+          <div style="font-size:11px;font-weight:700;color:#8FA8C8;margin-bottom:4px">תזכורת</div>
+          <div class="form-row">
+            <button class="catbtn sel" id="evrem-none" onclick="selEvRem('none')">ללא</button>
+            <button class="catbtn" id="evrem-1h" onclick="selEvRem('1h')">שעה לפני</button>
+            <button class="catbtn" id="evrem-1d" onclick="selEvRem('1d')">יום לפני</button>
+          </div>
+          <div class="form-actions"><button class="btn-cancel" onclick="closeEvForm()">ביטול</button><button class="btn-add" onclick="addEv()">הוסף אירוע</button></div>
+        </div>
+        <!-- Calendar view -->
+        <div id="ev-calendar" style="display:block">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+            <button onclick="prevMonth()" style="background:none;border:none;cursor:pointer;font-size:22px;color:#4A5D8A;padding:4px 8px">‹</button>
+            <div id="cal-title" style="font-size:17px;font-weight:700;color:#0F1B3D"></div>
+            <button onclick="nextMonth()" style="background:none;border:none;cursor:pointer;font-size:22px;color:#4A5D8A;padding:4px 8px">›</button>
+          </div>
+          <!-- Day headers -->
+          <div style="display:grid;grid-template-columns:repeat(7,1fr);text-align:center;margin-bottom:6px">
+            <div style="font-size:11px;font-weight:700;color:#8FA8C8;padding:4px">א</div>
+            <div style="font-size:11px;font-weight:700;color:#8FA8C8;padding:4px">ב</div>
+            <div style="font-size:11px;font-weight:700;color:#8FA8C8;padding:4px">ג</div>
+            <div style="font-size:11px;font-weight:700;color:#8FA8C8;padding:4px">ד</div>
+            <div style="font-size:11px;font-weight:700;color:#8FA8C8;padding:4px">ה</div>
+            <div style="font-size:11px;font-weight:700;color:#8FA8C8;padding:4px">ו</div>
+            <div style="font-size:11px;font-weight:700;color:#8FA8C8;padding:4px">ש</div>
+          </div>
+          <div id="cal-grid" style="display:grid;grid-template-columns:repeat(7,1fr);gap:3px"></div>
+          <!-- Selected day events -->
+          <div id="cal-day-events" style="margin-top:14px"></div>
+        </div>
+        <!-- Week view -->
+        <div id="ev-week-view" style="display:none">
+          <div id="week-header" style="display:flex;gap:4px;margin-bottom:10px"></div>
+          <div id="week-body"></div>
+        </div>
+        <!-- List view -->
+        <div id="ev-list-view" style="display:none">
+          <div id="evlist"></div>
+        </div>
+      </div>
+
+      <div class="section" id="sec-task">
+        <button onclick="notifySection('task')" class="notify-btn">
+          🔔 שלח התראה לשני על המשימות
+        </button>
+        <div class="add-bar"><input id="tski" placeholder="משימה חדשה..." /><button class="addbtn" onclick="addTask()">+</button></div>
+        <div id="tasklist"></div>
+      </div>
+
+      <div class="section" id="sec-rem">
+        <button onclick="notifySection('rem')" class="notify-btn">
+          🔔 שלח התראה לשני על התזכורות
+        </button>
+        <button class="addbtn" onclick="toggleRemForm()" style="width:100%;border-radius:16px;font-size:17px;height:52px;margin-bottom:16px;gap:8px">+ הוסף תזכורת</button>
+        <div class="evform" id="remform">
+          <input type="text" id="remi" placeholder="מה לזכור? (חובה)" />
+          <div class="form-row">
+            <input type="date" id="remdate" />
+            <input type="time" id="remtime" />
+          </div>
+          <div class="form-row">
+            <button class="catbtn" id="remwho-me" onclick="selRemWho('me')">רק לי</button>
+            <button class="catbtn sel" id="remwho-both" onclick="selRemWho('both')">לשנינו</button>
+            <button class="catbtn" id="remwho-other" onclick="selRemWho('other')">לבן/ת הזוג</button>
+          </div>
+          <div class="form-actions">
+            <button class="btn-cancel" onclick="closeRemForm()">ביטול</button>
+            <button class="btn-add" onclick="addRem()">הוסף תזכורת</button>
+          </div>
+        </div>
+        <div id="remlist"></div>
+      </div>
+
+      <div class="section" id="sec-msg">
+        <div class="msg-feed" id="msgfeed"></div>
+        <div style="padding:8px 14px 0;background:#fff9f3">
+          <button onclick="notifySection('msg')" style="width:100%;padding:9px;background:#EBF0FF;border:1.5px solid #DCE6F5;border-radius:12px;font-size:13px;font-weight:600;color:#3B5BDB;cursor:pointer;font-family:inherit;display:flex;align-items:center;justify-content:center;gap:6px">
+            🔔 שלח התראה לשני על ההודעות
+          </button>
+        </div>
+        <div class="msginput">
+          <textarea class="msgtxt" id="msgi" placeholder="כתוב/י משהו אישי..." rows="1" oninput="autoR(this)" onkeydown="msgKey(event)"></textarea>
+          <button class="msgsend" id="msgsend" onclick="sendMsg()" disabled>➤</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <nav class="nav">
+    <button class="navbtn active" onclick="showTab('shop',this)">
+      <svg viewBox="0 0 24 24"><path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 01-8 0"/></svg>קניות
+    </button>
+    <button class="navbtn" onclick="showTab('ev',this)">
+      <svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>אירועים
+    </button>
+    <button class="navbtn" onclick="showTab('task',this)">
+      <svg viewBox="0 0 24 24"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg>משימות
+    </button>
+    <button class="navbtn" onclick="showTab('rem',this)">
+      <svg viewBox="0 0 24 24"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 01-3.46 0"/></svg>תזכורות
+    </button>
+    <button class="navbtn" onclick="showTab('msg',this)">
+      <svg viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/></svg>מכתבים
+    </button>
+  </nav>
+</div>
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+<script>
+// ── SPLASH ──
+window.addEventListener('load', () => {
+  setTimeout(() => {
+    document.getElementById('splash').classList.add('hide');
+    setTimeout(() => { document.getElementById('splash').style.display='none'; document.getElementById('id-screen').style.display='flex'; }, 500);
+  }, 1800);
+});
+
+firebase.initializeApp({apiKey:"AIzaSyD8i4Jr23tF9CZSEzAXDUyIPuYgpyHcMUg",authDomain:"halamish-s-home.firebaseapp.com",projectId:"halamish-s-home",storageBucket:"halamish-s-home.firebasestorage.app",messagingSenderId:"752500579",appId:"1:752500579:web:a26b6b2094ae45df159d56"});
+const db=firebase.firestore();
+const DOCS={};['shop','evs','tasks','rems','msgs','log'].forEach(k=>{DOCS[k]=db.collection('home').doc(k);});
+
+let me=null,lastSeen=0,nOpen=false,uid=Date.now(),selcat='kids',appReady=false;
+const loaded=new Set(),ALL=['shop','evs','tasks','rems','msgs','log','shopLists'];
+const MN=['ינואר','פברואר','מרץ','אפריל','מאי','יוני','יולי','אוגוסט','ספטמבר','אוקטובר','נובמבר','דצמבר'];
+const MNS=['ינו','פבר','מרץ','אפר','מאי','יוני','יולי','אוג','ספט','אוק','נוב','דצמ'];
+function suf(u){return u==='שני'?'ה':'';}
+const state={shop:[],evs:[],tasks:[],rems:[],msgs:[],log:[],shopLists:[]};
+const SEED={
+  shop:[{id:1,text:'חלב',done:false,by:'זיו'},{id:2,text:'לחם',done:false,by:'שני'},{id:3,text:'ביצים',done:true,by:'זיו'}],
+  evs:[{id:4,name:'חוג כדורגל לילדים',dateStr:'2026-07-05',timeStr:'17:00',cat:'kids',by:'שני'},{id:5,name:'ערב זוגי',dateStr:'2026-07-12',timeStr:'19:30',cat:'couple',by:'זיו'}],
+  tasks:[{id:7,name:'לתאם רופא שיניים',done:false,who:'שני'},{id:8,name:'לחדש ביטוח רכב',done:false,who:'זיו'}],
+  rems:[{id:10,name:'תרופות לכלב — כל שישי',by:'שני'}],msgs:[],log:[]};
+
+async function sendPush(msg,target){
+  const filters=target
+    ?[{field:'tag',key:'user',relation:'=',value:target}]
+    :[{field:'tag',key:'user',relation:'!=',value:me}];
+  try{
+    const res=await fetch('https://api.onesignal.com/notifications',{method:'POST',
+      headers:{'Content-Type':'application/json',
+        'Authorization':'Key os_v2_app_hbikkj46lzhxbppdnsqkywxecuzop74c7kwuf7ud6cg3iuwhbtkgenl4whosgy4w45w2ppsfc4yblf32j2kxrz5fdasln52khl7tmvq'},
+      body:JSON.stringify({
+        app_id:'3850a527-9e5e-4f70-bde3-6ca0ac5ae415',
+        name:'habayit-push',
+        target_channel:'push',
+        contents:{he:msg,en:msg},
+        headings:{he:'🏠 הבית שלנו',en:'🏠 הבית שלנו'},
+        filters
+      })});
+    const data=await res.json();
+    console.log('Push sent:',data);
+    return data.id;
+  }catch(e){console.log('Push error:',e);}
+
+
+async function save(k){try{await DOCS[k].set({items:state[k],ts:Date.now(),by:me});}catch(e){}}
+function addLog(msg){state.log.unshift({u:me,msg,t:Date.now()});if(state.log.length>60)state.log.length=60;save('log');updateBadge();}
+function updateBadge(){const n=state.log.filter(e=>e.u!==me&&e.t>lastSeen).length;const b=document.getElementById('nbadge');b.style.display=n?'flex':'none';b.textContent=n>9?'9+':n;}
+function showSync(msg){const p=document.getElementById('syncpill');p.textContent=msg;p.classList.add('show');clearTimeout(p._t);p._t=setTimeout(()=>p.classList.remove('show'),3500);}
+function setConn(on){document.getElementById('cdot').className='cdot'+(on?' on':'');document.getElementById('ctext').textContent=`מחובר${me==='שני'?'ת':''} כ${me}`+(on?' · חי':'');}
+
+function startListeners(){
+  // shopLists special listener
+  db.collection('home').doc('shopLists').onSnapshot(doc=>{
+    if(doc.exists){state.shopLists=doc.data().lists||[];}
+    if(!loaded.has('shopLists')){loaded.add('shopLists');if(loaded.size===ALL.length)initApp();}
+    else if(appReady){renderShop();}
+  });
+  ALL.filter(k=>k!=='shopLists').forEach(k=>{DOCS[k].onSnapshot(doc=>{const d=doc.exists?(doc.data().items||[]):[];const byOther=doc.exists&&doc.data().by&&doc.data().by!==me;const wasReady=appReady;state[k]=d;if(!loaded.has(k)){loaded.add(k);if(loaded.size===ALL.length)initApp();}else if(wasReady){renderSection(k);updateBadge();if(nOpen)renderN();if(byOther&&k==='log'&&d.length)showSync(d[0].msg);}setConn(true);},err=>{setConn(false);});});}
+
+function renderSection(k){const m={shop:renderShop,evs:renderEv,tasks:renderTask,rems:renderRem,msgs:renderMsgs};if(m[k])m[k]();}
+
+async function initApp(){
+  // Init shopLists
+  if(!state.shopLists||!state.shopLists.length){
+    const legacyItems=state.shop||[];
+    state.shopLists=[{id:uid++,name:'רשימה ראשונה',createdAt:Date.now(),items:legacyItems}];
+    activeListId=state.shopLists[0].id;
+    await db.collection('home').doc('shopLists').set({lists:state.shopLists,ts:Date.now(),by:me});
+  } else {
+    activeListId=state.shopLists[0].id;
+  }
+  if(ALL.filter(k=>k!=='shopLists').every(k=>!state[k].length)){Object.assign(state,JSON.parse(JSON.stringify(SEED)));for(const k of ALL.filter(k=>k!=='shopLists'))await save(k);}
+  appReady=true;document.getElementById('loader').style.display='none';document.getElementById('sections').style.display='block';document.getElementById('sec-shop').style.display='block';
+  renderShop();renderEv();renderTask();renderRem();renderMsgs();updateBadge();updateNextEventBar();
+  OneSignalDeferred.push(function(OneSignal){OneSignal.User.addTag('user',me);});
+}
+
+function toggleN(){nOpen=!nOpen;document.getElementById('npanel').classList.toggle('open',nOpen);if(nOpen)renderN();}
+function renderN(){const el=document.getElementById('nlist');if(!state.log.length){el.innerHTML='<div style="padding:18px;text-align:center;font-size:15px;color:#8FA8C8">אין עדכונים עדיין</div>';return;}el.innerHTML=state.log.map(e=>{const isNew=e.u!==me&&e.t>lastSeen;const m=Math.floor((Date.now()-e.t)/60000);const ago=m<1?'עכשיו':m<60?`${m} דק'`:`${Math.floor(m/60)} שע'`;return`<div class="nrow ${isNew?'isnew':''}"><div class="ndot ${isNew?'new':'old'}"></div><div style="flex:1"><div class="ntext">${e.msg}</div><div class="ntime">לפני ${ago}</div></div></div>`;}).join('');}
+function markRead(){lastSeen=Date.now();updateBadge();renderN();}
+
+// ── SHOPPING ──
+const CATS = [
+  {id:'all',  label:'הכל',    emoji:'🛒'},
+  {id:'veg',  label:'ירקות ופירות', emoji:'🥦'},
+  {id:'dairy',label:'חלב וביצים',   emoji:'🥛'},
+  {id:'meat', label:'בשר ודגים',    emoji:'🥩'},
+  {id:'bread',label:'לחם ומאפים',   emoji:'🍞'},
+  {id:'clean',label:'ניקיון',       emoji:'🧹'},
+  {id:'misc', label:'כללי',         emoji:'📦'},
+];
+let activeCat='all', activeListId=null;
+
+// ── LIST MANAGEMENT ──
+function getLists(){return state.shopLists||[];}
+function getActiveList(){return getLists().find(l=>l.id===activeListId)||getLists()[0]||null;}
+
+function addNewList(){
+  const lists=getLists();
+  const today=new Date();
+  const label=`${today.getDate()}/${today.getMonth()+1}`;
+  const name=`קניות ${label}`;
+  const newList={id:uid++,name,createdAt:Date.now(),items:[]};
+  if(!state.shopLists)state.shopLists=[];
+  state.shopLists.push(newList);
+  activeListId=newList.id;
+  saveShopLists();renderShop();
+  setTimeout(()=>renameList(newList.id),100);
+}
+
+function switchList(id){activeListId=id;activeCat='all';renderShop();}
+
+function renameList(id){
+  const l=getLists().find(x=>x.id===id);if(!l)return;
+  const name=prompt('שם הרשימה:',l.name);
+  if(name&&name.trim()){l.name=name.trim();saveShopLists();renderShop();}
+}
+
+function deleteList(id){
+  if(!confirm('למחוק את הרשימה?'))return;
+  state.shopLists=state.shopLists.filter(x=>x.id!==id);
+  if(activeListId===id)activeListId=getLists()[0]?.id||null;
+  saveShopLists();renderShop();
+}
+
+function clearDone(){
+  const l=getActiveList();if(!l)return;
+  const removed=l.items.filter(i=>i.done).length;
+  l.items=l.items.filter(i=>!i.done);
+  if(removed)addLog(`${me} ניק${me==='שני'?'תה':'ה'} פריטים מסומנים מ"${l.name}"`);
+  saveShopLists();renderShop();
+}
+
+function uncheckAll(){
+  const l=getActiveList();if(!l)return;
+  l.items.forEach(i=>i.done=false);
+  saveShopLists();renderShop();
+}
+
+function saveShopLists(){
+  trySaveShop();
+}
+
+async function trySaveShop(){
+  try{await db.collection('home').doc('shopLists').set({lists:state.shopLists,ts:Date.now(),by:me});}catch(e){}
+}
+
+function renderCatFilter(){
+  document.getElementById('cat-filter').innerHTML=CATS.map(c=>`
+    <button onclick="setActiveCat('${c.id}')" style="
+      flex-shrink:0;padding:6px 14px;border-radius:99px;border:2px solid ${activeCat===c.id?'#3B5BDB':'#DCE6F5'};
+      background:${activeCat===c.id?'#3B5BDB':'#fff'};color:${activeCat===c.id?'#fff':'#4A5D8A'};
+      font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;white-space:nowrap">
+      ${c.emoji} ${c.label}
+    </button>`).join('');
+}
+
+function setActiveCat(id){activeCat=id;renderShop();}
+
+function catForItem(text){
+  const t=text.toLowerCase();
+  if(/עגבני|מלפפ|גזר|בצל|תפוח|בננ|לימון|ירק|פרי|תות|אבוקד|שום|פלפל|חסה|כרוב|תירס|אפרסק|מנגו|ענב/.test(t))return'veg';
+  if(/חלב|גבינ|יוגורט|ביצ|שמנת|קוטג|לבן/.test(t))return'dairy';
+  if(/עוף|בשר|דג|סלמון|טונה|קציצ|נקניק|שניצל/.test(t))return'meat';
+  if(/לחם|פית|לחמני|עוגה|עוגי|קרואסון|בייגל|מאפ/.test(t))return'bread';
+  if(/סבון|שמפו|ניקוי|אבקה|מרכך|נייר טואלט|ממחט|אשפה|כלים/.test(t))return'clean';
+  return'misc';
+}
+
+function renderListPills(){
+  const lists=getLists();
+  document.getElementById('list-pills').innerHTML=lists.map(l=>`
+    <button onclick="switchList(${l.id})" ondblclick="renameList(${l.id})" style="
+      flex-shrink:0;padding:7px 14px;border-radius:12px;
+      border:2px solid ${activeListId===l.id?'#3B5BDB':'#DCE6F5'};
+      background:${activeListId===l.id?'#3B5BDB':'#fff'};
+      color:${activeListId===l.id?'#fff':'#4A5D8A'};
+      font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;white-space:nowrap">
+      ${l.name}
+    </button>`).join('');
+}
+
+function renderListActions(){
+  const l=getActiveList();if(!l)return;
+  const done=l.items.filter(i=>i.done).length;
+  const total=l.items.length;
+  // Stats per category
+  const catStats=CATS.filter(c=>c.id!=='all').map(c=>{
+    const n=l.items.filter(i=>!i.done&&(i.cat||catForItem(i.text))===c.id).length;
+    return n?`${c.emoji}${n}`:'';
+  }).filter(Boolean).join(' · ');
+  document.getElementById('list-actions').innerHTML=`
+    <div style="flex:1">
+      <div style="font-size:12px;color:#8FA8C8">${total} פריטים${done?` · ${done} נקנו`:''}</div>
+      ${catStats?`<div style="font-size:11px;color:#A8BCD0;margin-top:2px">${catStats}</div>`:''}
+    </div>
+    <button onclick="duplicateList(${l.id})" title="שכפל רשימה" style="padding:6px 10px;border-radius:10px;border:1.5px solid #DCE6F5;background:#fff;color:#4A5D8A;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit">⎘ שכפל</button>
+    ${done?`<button onclick="clearDone()" style="padding:6px 10px;border-radius:10px;border:1.5px solid #DCE6F5;background:#fff;color:#4A5D8A;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit">🗑 מסומנים</button>`:''}
+    ${done?`<button onclick="uncheckAll()" style="padding:6px 10px;border-radius:10px;border:1.5px solid #DCE6F5;background:#fff;color:#4A5D8A;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit">↺ נקה</button>`:''}
+    <button onclick="deleteList(${l.id})" style="padding:6px 10px;border-radius:10px;border:1.5px solid #FFD0D0;background:#FFF5F5;color:#CC3333;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit">✕</button>
+  `;
+}
+
+function renderShop(){
+  const lists=getLists();
+  if(!lists.length){
+    // Init first list
+    state.shopLists=[{id:uid++,name:'רשימה ראשונה',createdAt:Date.now(),items:[]}];
+    activeListId=state.shopLists[0].id;
+  }
+  if(!activeListId||!lists.find(l=>l.id===activeListId))activeListId=lists[0]?.id;
+
+  renderListPills();
+  renderListActions();
+  renderCatFilter();
+
+  const l=getActiveList();
+  if(!l){document.getElementById('spend').innerHTML='<div class="empty">צור רשימה חדשה</div>';return;}
+
+  const items=activeCat==='all'?l.items:l.items.filter(i=>(i.cat||catForItem(i.text))===activeCat);
+
+  let html='';
+  if(activeCat==='all'){
+    // Group by category, done items at bottom
+    const pending=items.filter(i=>!i.done);
+    const done=items.filter(i=>i.done);
+    const groups={};
+    pending.forEach(i=>{const c=i.cat||catForItem(i.text);if(!groups[c])groups[c]=[];groups[c].push(i);});
+    CATS.filter(c=>c.id!=='all'&&groups[c.id]).forEach(c=>{
+      html+=`<div style="font-size:11px;font-weight:700;color:#8FA8C8;margin:10px 0 6px;letter-spacing:.5px">${c.emoji} ${c.label.toUpperCase()}</div>`;
+      html+=groups[c.id].map(sc).join('');
+    });
+    if(!pending.length&&!done.length)html='<div class="empty">הרשימה ריקה<br><span style="font-size:13px;color:#8FA8C8">הוסף פריטים למעלה</span></div>';
+    if(done.length){
+      html+=`<div style="font-size:11px;font-weight:700;color:#8FA8C8;margin:14px 0 6px;letter-spacing:.5px;border-top:1.5px dashed #DCE6F5;padding-top:12px">✓ נקנה</div>`;
+      html+=done.map(sc).join('');
+    }
+  } else {
+    html=items.length?items.map(sc).join(''):'<div class="empty">אין פריטים בקטגוריה זו</div>';
+  }
+  document.getElementById('spend').innerHTML=html;
+}
+
+function sc(i){
+  const c=CATS.find(x=>x.id===(i.cat||catForItem(i.text)))||CATS[CATS.length-1];
+  const strike=i.done?'text-decoration:line-through;color:#8FA8C8':'';
+  return`<div class="icard ${i.done?'done':''}" style="${i.done?'opacity:.7':''}">
+    <div class="cb ${i.done?'chk':''}" onclick="togShop(${i.id})">${i.done?'✓':''}</div>
+    <div style="flex:1;min-width:0" ondblclick="editShop(${i.id})" title="לחץ פעמיים לעריכה">
+      <div style="display:flex;align-items:center;gap:6px">
+        <span class="itext" style="${strike}">${i.text}</span>
+        ${(i.qty&&i.qty>1)?`<span style="background:#3B5BDB;color:#fff;font-size:11px;font-weight:700;padding:2px 7px;border-radius:99px">×${i.qty}</span>`:''}
+        <span style="font-size:14px">${c.emoji}</span>
+      </div>
+      ${i.note?`<div style="font-size:12px;color:#8FA8C8;margin-top:2px">📝 ${i.note}</div>`:''}
+      <div style="font-size:11px;color:#A8BCD0;margin-top:1px">${i.by} · לחץ פעמיים לעריכה</div>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:4px;align-items:center">
+      ${(!i.done&&i.qty&&i.qty>1)?`<div style="display:flex;gap:4px">
+        <button onclick="changeQty(${i.id},-1)" style="width:22px;height:22px;border-radius:50%;border:1.5px solid #DCE6F5;background:#fff;color:#4A5D8A;font-size:14px;cursor:pointer;display:flex;align-items:center;justify-content:center;line-height:1">−</button>
+        <button onclick="changeQty(${i.id},1)" style="width:22px;height:22px;border-radius:50%;border:1.5px solid #DCE6F5;background:#fff;color:#4A5D8A;font-size:14px;cursor:pointer;display:flex;align-items:center;justify-content:center;line-height:1">+</button>
+      </div>`:''}
+      <button class="idel" onclick="editShop(${i.id})" title="עריכה" style="font-size:16px">✏️</button>
+      <button class="idel" onclick="delShop(${i.id})">✕</button>
+    </div>
+  </div>`;}
+
+function parseItemInput(raw){
+  let name=raw.trim(),qty=1,note='';
+  // parse quantity: "חלב x2" / "חלב ×3" / "2 חלב"
+  let m=name.match(/^(.+?)\s*[x×]\s*(\d+)$/i)||name.match(/^(\d+)\s*[x×]\s*(.+)$/i);
+  if(m){const isFirst=/^\d/.test(m[0]);name=isFirst?m[2].trim():m[1].trim();qty=parseInt(isFirst?m[1]:m[2]);}
+  // parse note: "חלב (3.5%)"
+  m=name.match(/^(.+?)\s*\((.+)\)$/);
+  if(m){name=m[1].trim();note=m[2].trim();}
+  return{name,qty,note};
+}
+
+function addShop(){
+  const inp=document.getElementById('si'),raw=inp.value.trim();if(!raw)return;
+  const l=getActiveList();if(!l)return;
+  const{name,qty,note}=parseItemInput(raw);
+  const cat=catForItem(name);
+  l.items.unshift({id:uid++,text:name,qty,note,done:false,by:me,cat});
+  addLog(`${me} הוסיפ${suf(me)} "${name}"${qty>1?` ×${qty}`:''}${note?` (${note})`:''} ל"${l.name}"`);
+  inp.value='';document.getElementById('suggestions').style.display='none';
+  saveShopLists();renderShop();
+}
+
+function changeQty(id,delta){
+  const l=getActiveList();if(!l)return;
+  const i=l.items.find(x=>x.id===id);if(!i)return;
+  i.qty=Math.max(1,(i.qty||1)+delta);
+  saveShopLists();renderShop();
+}
+function togShop(id){
+  const l=getActiveList();if(!l)return;
+  const i=l.items.find(x=>x.id===id);if(!i)return;
+  i.done=!i.done;
+  if(i.done)addLog(`${me} סימנ${suf(me)} "${i.text}" כנקנה ✓`);
+  saveShopLists();renderShop();
+}
+function delShop(id){
+  const l=getActiveList();if(!l)return;
+  const i=l.items.find(x=>x.id===id);
+  if(i)addLog(`${me} הסיר${suf(me)} "${i.text}" מהקניות`);
+  l.items=l.items.filter(x=>x.id!==id);
+  saveShopLists();renderShop();
+}
+
+function editShop(id){
+  const l=getActiveList();if(!l)return;
+  const i=l.items.find(x=>x.id===id);if(!i)return;
+  showEditModal(i.text, i.note||'', (newText, newNote)=>{
+    const old=i.text;
+    const {name,qty,note}=parseItemInput(newText);
+    i.text=name;i.qty=qty||i.qty||1;i.note=newNote||note;i.cat=catForItem(name);
+    if(old!==name)addLog(`${me} עדכנ${suf(me)} "${old}" ל"${name}"`);
+    saveShopLists();renderShop();
+  });
+}
+
+// ── AUTOCOMPLETE ──
+function getHistory(){
+  const map={};
+  (state.shopLists||[]).forEach(l=>{l.items.forEach(i=>{
+    if(!map[i.text])map[i.text]={text:i.text,cat:i.cat||catForItem(i.text),count:0};
+    map[i.text].count++;
+  });});
+  return Object.values(map).sort((a,b)=>b.count-a.count);
+}
+
+function showSuggestions(val){
+  const box=document.getElementById('suggestions');
+  if(!val||val.length<1){box.style.display='none';return;}
+  const clean=parseItemInput(val).name;
+  const matches=getHistory().filter(h=>h.text.includes(clean)&&h.text!==clean).slice(0,5);
+  if(!matches.length){box.style.display='none';return;}
+  box.style.display='block';
+  box.innerHTML=matches.map(h=>{
+    const c=CATS.find(x=>x.id===h.cat)||CATS[CATS.length-1];
+    return`<div onclick="selectSuggestion('${h.text.replace(/'/g,"\'")}')" style="padding:10px 14px;cursor:pointer;border-bottom:1px solid #F0F4FF;font-size:15px;color:#0F1B3D;display:flex;align-items:center;gap:8px">
+      <span>${c.emoji}</span><span>${h.text}</span>
+      <span style="font-size:11px;color:#A8BCD0;margin-right:auto">${h.count>1?`× ${h.count}`:''}</span>
+    </div>`;
+  }).join('');
+}
+
+function selectSuggestion(text){
+  document.getElementById('si').value=text;
+  document.getElementById('suggestions').style.display='none';
+  addShop();
+}
+
+// ── DUPLICATE LIST ──
+function duplicateList(id){
+  const src=getLists().find(l=>l.id===id);if(!src)return;
+  const copy={
+    id:uid++,
+    name:src.name+' (עותק)',
+    createdAt:Date.now(),
+    items:src.items.map(i=>({...i,id:uid++,done:false}))
+  };
+  state.shopLists.push(copy);
+  activeListId=copy.id;
+  addLog(`${me} שכפל${suf(me)} רשימה: "${src.name}"`);
+  saveShopLists();renderShop();
+}
+
+function parseD(s){if(!s)return null;const[y,m,d]=s.split('-').map(Number);return new Date(y,m-1,d);}
+function dateStr(d){return`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;}
+
+// ── WHAT'S COMING BANNER ──
+function updateNextEventBar(){
+  const today=new Date();today.setHours(0,0,0,0);
+  const all=getExpandedEvents().filter(e=>{const d=parseD(e.dateStr);return d&&d>=today;});
+  all.sort((a,b)=>parseD(a.dateStr)-parseD(b.dateStr));
+  const bar=document.getElementById('next-event-bar');
+  const txt=document.getElementById('next-event-text');
+  if(!all.length){bar.style.display='none';return;}
+  const next=all[0];
+  const d=parseD(next.dateStr);
+  const diff=Math.floor((d-today)/86400000);
+  const when=diff===0?'היום':diff===1?'מחר':`בעוד ${diff} ימים`;
+  const recBadge=next.recurrence&&next.recurrence!=='none'?` 🔁`:'';
+  txt.textContent=`${next.name}${recBadge} · ${when}${next.timeStr?' בשעה '+next.timeStr:''}`;
+  bar.style.display='block';
+}
+
+// ── RECURRING EVENTS ──
+function getExpandedEvents(){
+  const result=[];
+  const horizon=new Date();horizon.setMonth(horizon.getMonth()+3);
+  state.evs.forEach(e=>{
+    if(!e.recurrence||e.recurrence==='none'){result.push(e);return;}
+    const base=parseD(e.dateStr);if(!base)return;
+    let cur=new Date(base);
+    for(let i=0;i<52;i++){
+      if(cur>horizon)break;
+      result.push({...e,id:e.id+'_'+i,dateStr:dateStr(cur),_original:e.id});
+      if(e.recurrence==='weekly')cur.setDate(cur.getDate()+7);
+      else if(e.recurrence==='monthly')cur.setMonth(cur.getMonth()+1);
+      else break;
+    }
+  });
+  return result;
+}
+
+// ── CALENDAR VIEW ──
+let calYear=new Date().getFullYear(), calMonth=new Date().getMonth(), selectedDay=null, evView='cal';
+let selEvWhoVal='both', selRecVal='none', selEvRemVal='none';
+
+function selEvWho(w){selEvWhoVal=w;['both','ziv','shani'].forEach(x=>document.getElementById('evwho-'+x).classList.toggle('sel',x===w));}
+function selRec(r){selRecVal=r;['none','weekly','monthly'].forEach(x=>document.getElementById('rec-'+x).classList.toggle('sel',x===r));}
+function selEvRem(r){selEvRemVal=r;['none','1h','1d'].forEach(x=>document.getElementById('evrem-'+x).classList.toggle('sel',x===r));}
+
+function setEvView(v){
+  evView=v;
+  document.getElementById('ev-calendar').style.display=v==='cal'?'block':'none';
+  document.getElementById('ev-week-view').style.display=v==='week'?'block':'none';
+  document.getElementById('ev-list-view').style.display=v==='list'?'block':'none';
+  ['cal','week','list'].forEach(x=>{
+    const btn=document.getElementById('view-'+x);
+    if(!btn)return;
+    btn.style.background=v===x?'#3B5BDB':'transparent';
+    btn.style.color=v===x?'#fff':'#4A5D8A';
+  });
+  if(v==='list')renderEvList();
+  else if(v==='week')renderWeekView();
+  else renderCalendar();
+}
+
+function prevMonth(){calMonth--;if(calMonth<0){calMonth=11;calYear--;}selectedDay=null;renderCalendar();}
+function nextMonth(){calMonth++;if(calMonth>11){calMonth=0;calYear++;}selectedDay=null;renderCalendar();}
+
+function eventsOnDay(y,m,d){
+  const ds=`${y}-${String(m+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+  return state.evs.filter(e=>e.dateStr===ds);
+}
+
+function renderCalendar(){
+  const cl={kids:'#3B5BDB',couple:'#7C3AED',general:'#1E7A5C'};
+  const today=new Date();
+  document.getElementById('cal-title').textContent=`${MN[calMonth]} ${calYear}`;
+  const firstDay=new Date(calYear,calMonth,1).getDay(); // 0=Sun
+  const daysInMonth=new Date(calYear,calMonth+1,0).getDate();
+  let grid='';
+  for(let i=0;i<firstDay;i++)grid+=`<div></div>`;
+  for(let d=1;d<=daysInMonth;d++){
+    const evs=eventsOnDay(calYear,calMonth,d);
+    const isToday=today.getFullYear()===calYear&&today.getMonth()===calMonth&&today.getDate()===d;
+    const isSel=selectedDay===d;
+    const dotColors=[...new Set(evs.map(e=>cl[e.cat]))];
+    grid+=`<div onclick="selectDay(${d})" style="
+      aspect-ratio:1;display:flex;flex-direction:column;align-items:center;justify-content:center;
+      border-radius:12px;cursor:pointer;position:relative;padding:4px 2px;
+      background:${isSel?'#3B5BDB':isToday?'#EBF0FF':'transparent'};
+      border:${isToday&&!isSel?'2px solid #3B5BDB':'2px solid transparent'}">
+      <span style="font-size:15px;font-weight:${isToday||isSel?'800':'500'};color:${isSel?'#fff':isToday?'#3B5BDB':'#0F1B3D'}">${d}</span>
+      ${evs.length?`<div style="display:flex;gap:2px;margin-top:2px">${dotColors.slice(0,3).map(c=>`<div style="width:5px;height:5px;border-radius:50%;background:${isSel?'rgba(255,255,255,.8)':c}"></div>`).join('')}</div>`:''}
+    </div>`;
+  }
+  document.getElementById('cal-grid').innerHTML=grid;
+  if(selectedDay)renderDayEvents(selectedDay);
+  else document.getElementById('cal-day-events').innerHTML='<div style="text-align:center;font-size:13px;color:#8FA8C8;padding:12px">לחץ על יום לצפייה באירועים</div>';
+}
+
+function selectDay(d){
+  selectedDay=selectedDay===d?null:d;
+  renderCalendar();
+}
+
+function renderDayEvents(d){
+  const evs=eventsOnDay(calYear,calMonth,d);
+  const cl={kids:'bk',couple:'bc',general:'bg'},lb={kids:'👶 ילדים',couple:'💑 זוג',general:'📌 כללי'};
+  const ds=`${String(d).padStart(2,'0')} ב${MN[calMonth]}`;
+  const el=document.getElementById('cal-day-events');
+  if(!evs.length){el.innerHTML=`<div style="background:#F0F4FF;border-radius:14px;padding:14px;text-align:center"><div style="font-weight:700;color:#0F1B3D;margin-bottom:4px">${ds}</div><div style="font-size:13px;color:#8FA8C8">אין אירועים</div></div>`;return;}
+  el.innerHTML=`<div style="font-weight:700;color:#0F1B3D;margin-bottom:8px;font-size:14px">${ds}</div>`+
+    evs.map(e=>`<div class="ecard" style="margin-bottom:8px">
+      <div class="edate"><div class="day">${d}</div><div class="mon">${MNS[calMonth]}</div></div>
+      <div class="einfo"><div class="ename">${e.name}</div>
+        <div class="esub"><span class="bdg ${cl[e.cat]}">${lb[e.cat]}</span>${e.timeStr?`<span>🕐 ${e.timeStr}</span>`:''}<span style="color:#8FA8C8">· ${e.by}</span></div>
+      </div>
+      <button class="idel" onclick="delEv(${e.id})">✕</button>
+    </div>`).join('');
+}
+
+function renderEvList(){
+  const cl={kids:'bk',couple:'bc',general:'bg'},lb={kids:'👶 ילדים',couple:'💑 זוג',general:'📌 כללי'};
+  const today=new Date();today.setHours(0,0,0,0);
+  const sorted=[...state.evs].sort((a,b)=>(parseD(a.dateStr)||new Date(9e15))-(parseD(b.dateStr)||new Date(9e15)));
+  const up=sorted.filter(e=>!e.dateStr||(parseD(e.dateStr)>=today));
+  const past=sorted.filter(e=>e.dateStr&&parseD(e.dateStr)<today);
+  let h='';
+  up.forEach(e=>{const d=parseD(e.dateStr);h+=evCard(e,cl,lb,false,d&&d.getTime()===today.getTime());});
+  if(past.length){h+=`<div class="sep-label">— עבר —</div>`;past.forEach(e=>{h+=evCard(e,cl,lb,true,false);});}
+  document.getElementById('evlist').innerHTML=h||'<div class="empty">אין אירועים</div>';
+}
+
+// ── WEEK VIEW ──
+function renderWeekView(){
+  const DAY_HE=["ראשון","שני","שלישי","רביעי","חמישי","שישי","שבת"];
+  const today=new Date();today.setHours(0,0,0,0);
+  const days=[];
+  for(let i=0;i<7;i++){const d=new Date(today);d.setDate(today.getDate()+i);days.push(d);}
+  const expanded=getExpandedEvents();
+  const cl={kids:'#3B5BDB',couple:'#7C3AED',general:'#1E7A5C'};
+  const bg={kids:'#EBF0FF',couple:'#F3E8FF',general:'#D1FAE5'};
+
+  let headerHtml='',bodyHtml='';
+  days.forEach((d,i)=>{
+    const isToday=i===0;
+    const ds=dateStr(d);
+    const dayEvs=expanded.filter(e=>e.dateStr===ds).sort((a,b)=>(a.timeStr||'')-(b.timeStr||''));
+    headerHtml+=`<div style="flex:1;text-align:center;padding:6px 2px;border-radius:10px;background:${isToday?'#3B5BDB':'transparent'}">
+      <div style="font-size:10px;font-weight:700;color:${isToday?'rgba(255,255,255,.8)':'#8FA8C8'}">${DAY_HE[d.getDay()]}</div>
+      <div style="font-size:16px;font-weight:${isToday?'800':'600'};color:${isToday?'#fff':'#0F1B3D'}">${d.getDate()}</div>
+    </div>`;
+    bodyHtml+=`<div style="flex:1;min-width:0">
+      ${dayEvs.length?dayEvs.map(e=>`<div onclick="delEv(${e._original||e.id})" style="background:${bg[e.cat]};border-right:3px solid ${cl[e.cat]};border-radius:8px;padding:4px 6px;margin-bottom:4px;cursor:pointer">
+        <div style="font-size:11px;font-weight:700;color:${cl[e.cat]};white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${e.name}</div>
+        ${e.timeStr?`<div style="font-size:10px;color:#8FA8C8">${e.timeStr}</div>`:''}
+      </div>`).join(''):'<div style="height:8px"></div>'}
+    </div>`;
+  });
+
+  document.getElementById('week-header').innerHTML=headerHtml;
+  document.getElementById('week-body').innerHTML=`<div style="display:flex;gap:4px;align-items:flex-start">${bodyHtml}</div>`;
+}
+
+function renderEv(){
+  if(evView==='cal')renderCalendar();
+  else if(evView==='week')renderWeekView();
+  else renderEvList();
+  updateNextEventBar();
+}
+
+function gcalLink(e){
+  if(!e.dateStr)return'';
+  const d=e.dateStr.replace(/-/g,'');
+  const t=e.timeStr?e.timeStr.replace(':','')+'00':'000000';
+  const end=e.timeStr?`${d}T${String(parseInt(e.timeStr.split(':')[0])+1).padStart(2,'0')}${e.timeStr.split(':')[1]}00`:`${d}`;
+  return`https://www.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(e.name)}&dates=${d}T${t}/${end}`;
+}
+
+function evCard(e,cl,lb,past,isTd){
+  const d=parseD(e.dateStr);
+  const whoIcon={both:'👫',ziv:'👨',shani:'👩'}[e.who]||'👫';
+  const recBadge=e.recurrence&&e.recurrence!=='none'?`<span style="font-size:10px;background:#F0F4FF;color:#3B5BDB;padding:2px 6px;border-radius:99px;font-weight:700">🔁 ${e.recurrence==='weekly'?'שבועי':'חודשי'}</span>`:'';
+  return`<div class="ecard ${past?'past':''}">
+    <div class="edate"><div class="day">${d?d.getDate():'—'}${isTd?'<span class="today-dot"></span>':''}</div><div class="mon">${d?MNS[d.getMonth()]:''}</div></div>
+    <div class="einfo"><div class="ename">${e.name}</div>
+      <div class="esub">
+        <span class="bdg ${cl[e.cat]}">${lb[e.cat]}</span>
+        ${e.timeStr?`<span>🕐 ${e.timeStr}</span>`:''}
+        <span>${whoIcon}</span>
+        ${recBadge}
+        <span style="color:#8FA8C8">· ${e.by}</span>
+      </div>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:4px;align-items:center">
+      ${e.dateStr?`<a href="${gcalLink(e)}" target="_blank" style="font-size:18px;text-decoration:none;opacity:.6" title="הוסף ל-Google Calendar">📆</a>`:''}
+      <button class="idel" onclick="delEv(${e.id})">✕</button>
+    </div>
+  </div>`;}
+
+let evOpen=false;
+function toggleEvForm(){evOpen=!evOpen;document.getElementById('evform').classList.toggle('open',evOpen);if(evOpen){document.getElementById('evdate').value=new Date().toISOString().split('T')[0];document.getElementById('evi').focus();selEvWho('both');selRec('none');selEvRem('none');}}
+function closeEvForm(){evOpen=false;document.getElementById('evform').classList.remove('open');document.getElementById('evi').value='';}
+function selCat(c){selcat=c;['kids','couple','general'].forEach(x=>document.getElementById('cat-'+x).classList.toggle('sel',x===c));}
+async function addEv(){
+  const name=document.getElementById('evi').value.trim();if(!name)return;
+  const ds=document.getElementById('evdate').value,timeStr=document.getElementById('evtime').value;
+  const whoMap={both:'שניהם',ziv:'זיו',shani:'שני'};
+  const recMap={none:'',weekly:'שבועי',monthly:'חודשי'};
+  // Schedule reminder if needed
+  let remNotifId=null;
+  if(selEvRemVal!=='none'&&ds&&timeStr){
+    const evDt=new Date(`${ds}T${timeStr}:00`);
+    const offset=selEvRemVal==='1h'?3600000:86400000;
+    const remDt=new Date(evDt.getTime()-offset);
+    const remDs=dateStr(remDt);
+    const remTime=`${String(remDt.getHours()).padStart(2,'0')}:${String(remDt.getMinutes()).padStart(2,'0')}`;
+    const when=selEvRemVal==='1h'?'שעה לפני':'יום לפני';
+    remNotifId=await scheduleNotif(`${name} (${when})`,remDs,remTime,null);
+  }
+  state.evs.push({id:uid++,name,dateStr:ds,timeStr,cat:selcat,who:selEvWhoVal,recurrence:selRecVal,remNotifId,by:me});
+  const d=parseD(ds);
+  const recLabel=recMap[selRecVal]?` 🔁 ${recMap[selRecVal]}`:'';
+  addLog(`${me} הוסיפ${suf(me)} אירוע: "${name}"${d?` ב${d.getDate()} ב${MN[d.getMonth()]}`:''} (${whoMap[selEvWhoVal]})${recLabel}`);
+  if(d){calYear=d.getFullYear();calMonth=d.getMonth();selectedDay=d.getDate();}
+  renderEv();closeEvForm();save('evs');
+}
+function delEv(id){const e=state.evs.find(x=>x.id===id);if(e)addLog(`${me} הסיר${suf(me)} אירוע: "${e.name}"`);state.evs=state.evs.filter(x=>x.id!==id);renderEv();save('evs');}
+
+function renderTask(){document.getElementById('tasklist').innerHTML=state.tasks.length?state.tasks.map(t=>`
+  <div class="tcard ${t.done?'done':''}">
+    <div class="cb ${t.done?'chk':''}" onclick="togTask(${t.id})">${t.done?'✓':''}</div>
+    <span class="tname" ondblclick="editTask(${t.id})">${t.name}</span>
+    <span class="wtag" onclick="cycleWho(${t.id})">${t.who}</span>
+    <button class="idel" onclick="editTask(${t.id})" title="עריכה">✏️</button>
+    <button class="idel" onclick="delTask(${t.id})">✕</button>
+  </div>`).join(''):'<div class="empty">אין משימות</div>';}
+function addTask(){const inp=document.getElementById('tski'),t=inp.value.trim();if(!t)return;state.tasks.unshift({id:uid++,name:t,done:false,who:me});renderTask();addLog(`${me} הוסיפ${suf(me)} משימה: "${t}"`);inp.value='';save('tasks');}
+function togTask(id){const t=state.tasks.find(x=>x.id===id);if(!t)return;t.done=!t.done;if(t.done)addLog(`${me} סיימ${suf(me)} משימה: "${t.name}" ✓`);renderTask();save('tasks');}
+function cycleWho(id){const t=state.tasks.find(x=>x.id===id);if(!t)return;const o=['זיו','שני','שניהם'];t.who=o[(o.indexOf(t.who)+1)%o.length];addLog(`${me} שינ${me==='שני'?'תה':''} אחראי ל"${t.name}": ${t.who}`);renderTask();save('tasks');}
+function delTask(id){const t=state.tasks.find(x=>x.id===id);if(t)addLog(`${me} מח${suf(me)} משימה: "${t.name}"`);state.tasks=state.tasks.filter(x=>x.id!==id);renderTask();save('tasks');}
+
+function editTask(id){
+  const t=state.tasks.find(x=>x.id===id);if(!t)return;
+  showEditModal(t.name, '', (newText)=>{
+    const old=t.name;t.name=newText.trim();
+    if(old!==t.name)addLog(`${me} עדכנ${suf(me)} משימה: "${old}" → "${t.name}"`);
+    save('tasks');renderTask();
+  });
+}
+
+// ── REMINDERS ──
+let remFormOpen=false, selRemWhoVal='both';
+
+function toggleRemForm(){
+  remFormOpen=!remFormOpen;
+  document.getElementById('remform').classList.toggle('open',remFormOpen);
+  if(remFormOpen){
+    document.getElementById('remdate').value=new Date().toISOString().split('T')[0];
+    document.getElementById('remtime').value='09:00';
+    document.getElementById('remi').focus();
+  }
+}
+function closeRemForm(){remFormOpen=false;document.getElementById('remform').classList.remove('open');document.getElementById('remi').value='';}
+function selRemWho(w){selRemWhoVal=w;['me','both','other'].forEach(x=>document.getElementById('remwho-'+x).classList.toggle('sel',x===w));}
+
+function fmtDateHeb2(s){if(!s)return'';const[y,m,d]=s.split('-').map(Number);const mn=['ינו','פבר','מרץ','אפר','מאי','יוני','יולי','אוג','ספט','אוק','נוב','דצמ'];return`${d} ב${mn[m-1]}`;}
+
+function remTimeLabel(r){
+  if(!r.dateStr)return'';
+  const d=new Date(`${r.dateStr}T${r.timeStr||'00:00'}`);
+  const diff=d-new Date();
+  if(diff<0)return`עבר · ${fmtDateHeb2(r.dateStr)}${r.timeStr?' '+r.timeStr:''}`;
+  const hrs=Math.floor(diff/3600000);
+  if(hrs<24)return`בעוד ${hrs} שע' · ${r.timeStr}`;
+  const days=Math.floor(diff/86400000);
+  if(days<7)return`בעוד ${days} ימים · ${fmtDateHeb2(r.dateStr)} ${r.timeStr}`;
+  return`${fmtDateHeb2(r.dateStr)} ${r.timeStr||''}`;
+}
+
+function remIsUrgent(r){
+  if(!r.dateStr)return false;
+  const d=new Date(`${r.dateStr}T${r.timeStr||'00:00'}`);
+  const diff=d-new Date();
+  return diff>0&&diff<86400000;
+}
+
+function renderRem(){
+  const el=document.getElementById('remlist');
+  if(!state.rems.length){el.innerHTML='<div class="empty">אין תזכורות<br><span style="font-size:13px;color:#8FA8C8">לחץ + להוסיף תזכורת עם שעה</span></div>';return;}
+  const sorted=[...state.rems].sort((a,b)=>{
+    if(!a.dateStr)return 1;if(!b.dateStr)return -1;
+    return new Date(a.dateStr+'T'+(a.timeStr||'00:00'))-new Date(b.dateStr+'T'+(b.timeStr||'00:00'));
+  });
+  const whoLabel=(r)=>({me:'רק לי',both:'לשנינו',other:`ל${me==='זיו'?'שני':'זיו'}`}[r.who]||'');
+  el.innerHTML=sorted.map(r=>{
+    const urgent=remIsUrgent(r);
+    return`<div class="rcard" style="${urgent?'border-right-color:#FF3B30;background:#FFF5F5':''}">
+      <span style="font-size:22px">${urgent?'🔴':'🔔'}</span>
+      <div style="flex:1">
+        <div style="font-size:16px;font-weight:600;color:#0F1B3D">${r.name}</div>
+        ${r.dateStr?`<div style="font-size:13px;color:${urgent?'#FF3B30':'#4A5D8A'};margin-top:3px;font-weight:${urgent?'700':'400'}">⏰ ${remTimeLabel(r)}</div>`:''}
+        <div style="font-size:11px;color:#8FA8C8;margin-top:2px">${whoLabel(r)} · ${r.by}</div>
+      </div>
+      <button class="idel" onclick="editRem(${r.id})" title="עריכה">✏️</button>
+      <button class="idel" onclick="delRem(${r.id})">✕</button>
+    </div>`;
+  }).join('');}
+
+async function scheduleNotif(text,dateStr,timeStr,excludeUser){
+  if(!dateStr||!timeStr)return null;
+  const pad=n=>n.toString().padStart(2,'0');
+  const d=new Date(`${dateStr}T${timeStr}:00`);
+  const sendAfter=`${dateStr} ${pad(d.getHours())}:${pad(d.getMinutes())}:00 GMT+0300`;
+  const filters=excludeUser?[{field:'tag',key:'user',relation:'!=',value:excludeUser}]:[];
+  try{
+    const res=await fetch('https://onesignal.com/api/v1/notifications',{method:'POST',
+      headers:{'Content-Type':'application/json','Authorization':'Basic os_v2_app_hbikkj46lzhxbppdnsqkywxecuzop74c7kwuf7ud6cg3iuwhbtkgenl4whosgy4w45w2ppsfc4yblf32j2kxrz5fdasln52khl7tmvq'},
+      body:JSON.stringify({app_id:'3850a527-9e5e-4f70-bde3-6ca0ac5ae415',
+        included_segments:['All'],
+        ...(filters.length&&{filters}),
+        contents:{he:`🔔 תזכורת: ${text}`,en:`🔔 Reminder: ${text}`},
+        headings:{he:'🏠 הבית שלנו',en:'🏠 הבית שלנו'},
+        send_after:sendAfter})});
+    const data=await res.json();return data.id;
+  }catch(e){return null;}
+}
+
+async function addRem(){
+  const inp=document.getElementById('remi'),t=inp.value.trim();if(!t)return;
+  const dateStr=document.getElementById('remdate').value;
+  const timeStr=document.getElementById('remtime').value;
+  const other=me==='זיו'?'שני':'זיו';
+  const excludeUser=selRemWhoVal==='me'?other:selRemWhoVal==='other'?me:null;
+  const notifId=await scheduleNotif(t,dateStr,timeStr,excludeUser);
+  const whoLabels={me:'רק לי',both:'לשנינו',other:`ל${other}`};
+  state.rems.unshift({id:uid++,name:t,dateStr,timeStr,who:selRemWhoVal,by:me,notifId});
+  renderRem();
+  addLog(`${me} הוסיפ${suf(me)} תזכורת${dateStr?' ל'+fmtDateHeb2(dateStr):''}: "${t}" (${whoLabels[selRemWhoVal]})`);
+  closeRemForm();save('rems');
+}
+
+async function delRem(id){
+  const r=state.rems.find(x=>x.id===id);
+  if(r){
+    addLog(`${me} הסיר${suf(me)} תזכורת: "${r.name}"`);
+    if(r.notifId)try{await fetch(`https://onesignal.com/api/v1/notifications/${r.notifId}?app_id=3850a527-9e5e-4f70-bde3-6ca0ac5ae415`,{method:'DELETE',headers:{'Authorization':'Basic os_v2_app_hbikkj46lzhxbppdnsqkywxecuzop74c7kwuf7ud6cg3iuwhbtkgenl4whosgy4w45w2ppsfc4yblf32j2kxrz5fdasln52khl7tmvq'}});}catch(e){}
+  }
+  state.rems=state.rems.filter(x=>x.id!==id);renderRem();save('rems');
+}
+
+function editRem(id){
+  const r=state.rems.find(x=>x.id===id);if(!r)return;
+  showEditModal(r.name, '', (newText)=>{
+    const old=r.name;r.name=newText.trim();
+    if(old!==r.name)addLog(`${me} עדכנ${suf(me)} תזכורת: "${old}" → "${r.name}"`);
+    save('rems');renderRem();
+  });
+}
+
+function fmtT(t){const d=new Date(t);return d.getHours().toString().padStart(2,'0')+':'+d.getMinutes().toString().padStart(2,'0');}
+function sameDay(a,b){return new Date(a).toDateString()===new Date(b).toDateString();}
+function esc(s){return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+function renderMsgs(){const f=document.getElementById('msgfeed');if(!state.msgs.length){f.innerHTML='<div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;color:#8FA8C8;font-size:17px;padding:40px;text-align:center"><div style="font-size:52px">💌</div><p>עדיין אין הודעות</p><p style="font-size:14px">כתוב/י משהו אישי לצד השני</p></div>';return;}let h='';state.msgs.forEach((m,i)=>{const mine=m.from===me,prev=state.msgs[i-1];if(!prev||!sameDay(prev.t,m.t)){const d=new Date(m.t);h+=`<div class="day-sep">— ${d.getDate()} ב${MN[d.getMonth()]} —</div>`;}h+=`<div class="bwrp ${mine?'mine':'theirs'}"><div class="bubble ${mine?'mine':'theirs'}">${esc(m.text)}</div><div class="bmeta">${mine?'':m.from+' · '}${fmtT(m.t)}</div></div>`;});f.innerHTML=h;f.scrollTop=f.scrollHeight;}
+function sendMsg(){const inp=document.getElementById('msgi'),t=inp.value.trim();if(!t)return;const other=me==='זיו'?'שני':'זיו';state.msgs.push({id:uid++,from:me,text:t,t:Date.now()});renderMsgs();addLog(`${me} שלח${suf(me)} הודעה אישית ל${other} 💌`);inp.value='';inp.style.height='';document.getElementById('msgsend').disabled=true;save('msgs');}
+function autoR(el){el.style.height='auto';el.style.height=Math.min(el.scrollHeight,110)+'px';document.getElementById('msgsend').disabled=!el.value.trim();}
+function msgKey(e){if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();sendMsg();}}
+
+function showTab(tab,btn){document.querySelectorAll('.section').forEach(s=>{s.classList.remove('active');s.style.display='none';});document.querySelectorAll('.navbtn').forEach(b=>b.classList.remove('active'));const el=document.getElementById('sec-'+tab);el.style.display=tab==='msg'?'flex':'block';el.classList.add('active');btn.classList.add('active');if(tab==='msg')setTimeout(()=>{const f=document.getElementById('msgfeed');if(f)f.scrollTop=f.scrollHeight;},50);}
+
+// ── EDIT MODAL ──
+function showEditModal(currentText, currentNote, onSave){
+  // Remove existing modal
+  const old=document.getElementById('edit-modal');if(old)old.remove();
+
+  const modal=document.createElement('div');
+  modal.id='edit-modal';
+  modal.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:9999;display:flex;align-items:flex-end;justify-content:center';
+  modal.innerHTML=`
+    <div style="background:#fff;border-radius:24px 24px 0 0;padding:24px 20px 32px;width:100%;max-width:540px;box-shadow:0 -8px 40px rgba(0,0,0,.15)">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:18px">
+        <div style="font-size:17px;font-weight:700;color:#0F1B3D">עריכה</div>
+        <button onclick="document.getElementById('edit-modal').remove()" style="background:none;border:none;font-size:22px;cursor:pointer;color:#8FA8C8">✕</button>
+      </div>
+      <input id="edit-text" value="${currentText.replace(/"/g,'&quot;')}" style="width:100%;padding:13px 16px;border:2px solid #DCE6F5;border-radius:14px;font-size:16px;font-family:inherit;color:#0F1B3D;margin-bottom:10px;direction:rtl;outline:none" />
+      ${currentNote!==undefined?`<input id="edit-note" value="${(currentNote||'').replace(/"/g,'&quot;')}" placeholder="הערה (אופציונלי)" style="width:100%;padding:11px 16px;border:2px solid #DCE6F5;border-radius:14px;font-size:14px;font-family:inherit;color:#0F1B3D;margin-bottom:14px;direction:rtl;outline:none" />`:''}
+      <button id="edit-save-btn" style="width:100%;padding:14px;background:#3B5BDB;color:#fff;border:none;border-radius:14px;font-size:16px;font-weight:700;cursor:pointer;font-family:inherit">שמור</button>
+    </div>`;
+  document.body.appendChild(modal);
+  
+  const inp=document.getElementById('edit-text');
+  inp.focus();inp.select();
+  inp.style.borderColor='#3B5BDB';
+
+  const save=()=>{
+    const newText=inp.value.trim();if(!newText)return;
+    const newNote=document.getElementById('edit-note')?document.getElementById('edit-note').value.trim():'';
+    onSave(newText, newNote);
+    modal.remove();
+  };
+  document.getElementById('edit-save-btn').onclick=save;
+  inp.addEventListener('keydown',e=>{if(e.key==='Enter')save();if(e.key==='Escape')modal.remove();});
+  modal.addEventListener('click',e=>{if(e.target===modal)modal.remove();});
+}
+
+document.addEventListener('click', e=>{
+  const box=document.getElementById('suggestions');
+  if(box&&!box.contains(e.target)&&e.target.id!=='si')box.style.display='none';
+});
+
+function subscribeToNotifs(){
+  OneSignalDeferred.push(async function(OS){
+    try{
+      await OS.Notifications.requestPermission();
+      await OS.User.PushSubscription.optIn();
+      OS.User.addTag('user', me);
+      document.getElementById('notif-setup').style.display='none';
+      showSync('התראות הופעלו! ✓');
+    }catch(e){
+      showSync('נסה שוב');
+      console.log(e);
+    }
+  });
+}
+
+function checkNotifStatus(){
+  setTimeout(()=>{
+    OneSignalDeferred.push(async function(OS){
+      try{
+        const ok=await OS.User.PushSubscription.optedIn;
+        document.getElementById('notif-setup').style.display=ok?'none':'block';
+        if(ok)OS.User.addTag('user',me);
+      }catch(e){}
+    });
+  },3000);
+}
+
+function setMe(name){me=name;lastSeen=0;checkNotifStatus();
+  document.getElementById('id-screen').style.display='none';
+  document.getElementById('main-app').style.display='block';
+  setConn(false);
+  ['si','tski','remi'].forEach((id,i)=>{
+    const fns=[addShop,addTask,addRem];
+    document.getElementById(id).addEventListener('keydown',e=>{if(e.key==='Enter')fns[i]();});
+  });
+  startListeners();
+}e.display='none';document.getElementById('main-app').style.display='block';setConn(false);['si','tski','remi'].forEach((id,i)=>{const fns=[addShop,addTask,addRem];document.getElementById(id).addEventListener('keydown',e=>{if(e.key==='Enter')fns[i]();});});startListeners();}
+</script>
+</body>
+</html>
